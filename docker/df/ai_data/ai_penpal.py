@@ -84,18 +84,21 @@ class AiPenpal:
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            max_retries = 5
-            base_delay = 150
+            max_retries = 8
+            base_delay = 3
 
             for i in range(max_retries):
                 try:
                     time.sleep(1 + random.random())
                     return func(*args, **kwargs)
-                except openai.error.APIConnectionError as e:
+                except (
+                    openai.error.APIConnectionError,
+                    openai.error.RateLimitError,
+                ) as e:
                     if i < max_retries:
                         print(e)  # make a bit of noise
                         print(f"Connection error: {i} (waiting)")
-                        time.sleep(base_delay * (i + 1))  # Wait before retrying
+                        time.sleep(base_delay * (2**i))  # Wait before retrying
                         print("Waiting done")
                         continue
                     else:
