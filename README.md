@@ -34,6 +34,8 @@ docker
 
 - Docker
 - Docker Compose
+- A Google API OAuth2 token for accessing Gmail (follow [these instructions](https://developers.google.com/identity/protocols/oauth2) to obtain a token)
+- An OpenAI API key for using the GPT model (sign up on [OpenAI's platform](https://beta.openai.com/signup) to get an API key)
 
 ## Setup
 
