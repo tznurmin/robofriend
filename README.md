@@ -19,7 +19,7 @@ docker
 │   │   ├── ai_penpal.py           # AI penpal logic
 │   │   ├── discussion_summary.py  # Discussion summarization logic
 │   │   ├── maildb.py              # Database interaction module for AI service
-│   │   ├── openai.key             # API key for OpenAI GPT-4 model
+│   │   ├── openai.key             # API key for OpenAI GPT model
 │   │   └── requirements.txt       # Python dependencies for the AI service
 │   └── mailer_data
 │       ├── maildb.py              # Database interaction module for mailer service
