@@ -62,7 +62,7 @@ docker
 
 ## Usage
 
-Once the application is running, simply send an email to the configured email address. In the email address's local part (the part before the '@' symbol), include a plus sign (+) followed by a user ID to uniquely identify the user. This helps the AI service to differentiate between different users and maintain separate conversation histories for each user. The AI service will generate a response based on the summary stored in the MongoDB service, and the mailer service will send the email to the recipient.
+Once the application is running, simply send an email to the configured email address. In the email address's local part (the part before the '@' symbol), include a plus sign (+) followed by a user ID to uniquely identify the user. This helps the AI service differentiate between different users and maintain separate conversation histories for each user. The AI service will generate a response based on the summary stored in the MongoDB service, and the mailer service will send the email to the recipient.
 
 For example, if your configured email address is robofriend@example.com and the user ID is john123, the email should be sent to robofriend+john123@example.com.
 
