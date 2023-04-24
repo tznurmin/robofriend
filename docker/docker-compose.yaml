@@ -1,0 +1,48 @@
+x-penpal-common-variables: &penpal-common
+  PENPAL_ID:                        # Penpal ID for MongoDB collections
+  PENPAL_NAME:                      # Name of your robofriend
+  PENPAL_EMAIL:                     # Email address (@gmail)
+  MAIL_DB_HOSTNAME: "frienddb"      # Hostname for Docker
+  MAIL_DB_PORT: "27017"             # MongoDB port
+  MAIL_DB_NAME: "robomail"          # DB to store email data and summaries
+  MAIL_DB_USER: "robofriend"        # DB username
+  MAIL_DB_PASSWORD:                 # DB password
+services:
+  mongo:
+    image: mongo:4.4.6
+    hostname: frienddb
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: # admin username
+      MONGO_INITDB_ROOT_PASSWORD: # admin password
+      <<: *penpal-common
+    volumes:
+      - ./database:/data/db
+      - ./configdb:/data/configdb
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+  ai:
+    build:
+      context: df
+      dockerfile: Dockerfile.ai
+    user: "1001:999"
+    hostname: friendai
+    depends_on: 
+      - mongo
+    command: /bin/sh -c 'python /home/app/ai_penpal.py'
+    environment:
+      <<: *penpal-common
+      REPLY_POLLING_INTERVAL: 121
+  mailer:
+    build:
+      context: df
+      dockerfile: Dockerfile.mailer
+    user: "1001:999"
+    hostname: friendmailer
+    depends_on: 
+      - mongo
+    command: /bin/sh -c 'python /home/app/penpal_mailer.py'
+    environment:
+      <<: *penpal-common
+      EMAIL_POLLING_INTERVAL: 307
+

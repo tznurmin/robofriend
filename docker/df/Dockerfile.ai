@@ -1,0 +1,16 @@
+FROM python
+
+COPY ai_data/openai.key /home/app/openai.key
+COPY ai_data/requirements.txt /home/app/requirements.txt
+COPY ai_data/ai_penpal.py /home/app/ai_penpal.py
+COPY ai_data/maildb.py /home/app/mongo_client/maildb.py
+COPY ai_data/discussion_summary.py /home/app/mongo_client/discussion_summary.py
+
+WORKDIR /home/app
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+WORKDIR /home/app
+
+CMD /bin/bash

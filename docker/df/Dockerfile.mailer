@@ -1,0 +1,13 @@
+FROM python
+
+COPY mailer_data/token.json /home/app/token.json
+COPY mailer_data/requirements.txt /home/app/requirements.txt
+COPY mailer_data/penpal_mailer.py /home/app/penpal_mailer.py
+COPY mailer_data/maildb.py /home/app/mongo_client/maildb.py
+
+WORKDIR /home/app
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD /bin/bash
