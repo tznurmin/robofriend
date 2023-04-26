@@ -1,9 +1,13 @@
 import base64
+import json
 import os
 import random
 import time
 from email.mime.text import MIMEText
+from functools import wraps
 
+from google.auth.exceptions import RefreshError
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -25,17 +29,52 @@ class PenpalMailer:
         self.penpal_id = os.environ.get("PENPAL_ID")
         self.penpal_name = os.environ.get("PENPAL_NAME")
         self.penpal_email = os.environ.get("PENPAL_EMAIL")
+        self.oauth_service = os.environ.get("OAUTH_SERVICE")
 
         # ok to crash here
         self.polling_interval = int(os.environ.get("EMAIL_POLLING_INTERVAL"))
 
-        self.creds = Credentials.from_authorized_user_file("token.json", scopes)
         self.db_conn = MailDB()
+
+        token_data = self.db_conn.get_oauth_token(self.oauth_service)
+
+        if token_data:
+            self.creds = Credentials.from_authorized_user_info(token_data["token"])
+        else:
+            with open("token.json", "r") as token_file:
+                self.creds = Credentials.from_authorized_user_file("token.json", scopes)
+                token_json = json.load(token_file)
+                self.db_conn.update_oauth_token(self.oauth_service, token_json)
 
     def wait(self):
         """Pause execution for the specified polling interval."""
         time.sleep(self.polling_interval + random.random())
 
+    def token_refresh(func):
+        """
+        Decorator for refreshing the OAuth2 token
+        """
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.creds.expired:
+                print("Token expired: trying to refresh")
+                try:
+                    self.creds.refresh(Request())
+                    print("Token refreshed")
+                    # Store the refreshed token into the database
+                    token_data = json.loads(self.creds.to_json())
+                    self.db_conn.update_oauth_token(self.oauth_service, token_data)
+                except RefreshError:
+                    # manual intervention needed
+                    print("Cannot refresh the OAuth2 token")
+                    exit()
+            print("Token not expired")
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    @token_refresh
     def send_mail(self):
         """Send outgoing emails stored in the database (state == 'pending')."""
         outgoing = self.db_conn.outgoing_email()
@@ -65,6 +104,7 @@ class PenpalMailer:
             except HttpError as error:
                 print(f"An error occurred: {error}")
 
+    @token_refresh
     def archive_downloaded(self, message_ids):
         """Archive downloaded emails by removing the 'INBOX' label."""
         try:
@@ -85,6 +125,7 @@ class PenpalMailer:
         except HttpError as error:
             print(f"An error occurred: {error}")
 
+    @token_refresh
     def check_mail(self):
         """Fetch new emails from the inbox and save them to the database."""
         try:

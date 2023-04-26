@@ -1,4 +1,5 @@
 import os
+import time
 
 import pymongo
 
@@ -23,6 +24,56 @@ class MailDB:
         self.mongo_db_uri = (
             f"mongodb://{db_user}:{db_password}@{db_hostname}:{db_port}/{db_name}"
         )
+
+    def _oauth_token_exists(self, service):
+        """
+        Check if an OAuth token exists for the given service.
+        """
+        with pymongo.MongoClient(self.mongo_db_uri) as client:
+            db = client.robomail
+            return db.oauth.find_one({"service": service}) is not None
+
+    def _add_oauth_token(self, service, token):
+        """
+        Add a new OAuth token for the given service.
+        """
+        with pymongo.MongoClient(self.mongo_db_uri) as client:
+            db = client.robomail
+            temp = {
+                "service": service,
+                "token": token,
+                "time_added": int(time.time()),
+                "time_modified": int(time.time()),
+                "iteration": 1,
+            }
+
+            return db.oauth.insert_one(temp)
+
+    def get_oauth_token(self, service):
+        """
+        Get the OAuth token for the given service.
+        """
+        with pymongo.MongoClient(self.mongo_db_uri) as client:
+            db = client.robomail
+            return db.oauth.find_one({"service": service})
+
+    def update_oauth_token(self, service, token):
+        """
+        Update the OAuth token for the given service.
+        If the token does not exist, add a new one.
+        """
+        with pymongo.MongoClient(self.mongo_db_uri) as client:
+            db = client.robomail
+            if self._oauth_token_exists(service):
+                return db.oauth.update_one(
+                    {"service": service},
+                    {
+                        "$set": {"token": token, "time_modified": int(time.time())},
+                        "$inc": {"iteration": 1},
+                    },
+                )
+            else:
+                return self._add_oauth_token(service, token)
 
     def save_emails(self, mails):
         """

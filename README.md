@@ -48,7 +48,7 @@ docker
 
 2. Add your OpenAI API key to `df/ai_data/openai.key`.
 
-3. Add your Google API OAuth2 token to `df/mailer_data/token.json`. Follow [these instructions](https://developers.google.com/identity/protocols/oauth2) to obtain an OAuth2 token.
+3. Add your Google API OAuth2 token to `df/mailer_data/token.json`.
 
 4. Edit the `docker-compose.yaml` file to configure the project details.
 

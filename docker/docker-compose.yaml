@@ -44,5 +44,6 @@ services:
     command: /bin/sh -c 'python /home/app/penpal_mailer.py'
     environment:
       <<: *penpal-common
+      OAUTH_SERVICE: google
       EMAIL_POLLING_INTERVAL: 307
 
