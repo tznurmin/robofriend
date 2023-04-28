@@ -2,10 +2,12 @@ import base64
 import json
 import os
 import random
+import socket
 import time
 from email.mime.text import MIMEText
 from functools import wraps
 
+import httplib2
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -57,19 +59,34 @@ class PenpalMailer:
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
+            max_retries = 8
+            base_delay = 3
+
             if self.creds.expired:
-                print("Token expired: trying to refresh")
-                try:
-                    self.creds.refresh(Request())
-                    print("Token refreshed")
-                    # Store the refreshed token into the database
-                    token_data = json.loads(self.creds.to_json())
-                    self.db_conn.update_oauth_token(self.oauth_service, token_data)
-                except RefreshError:
-                    # manual intervention needed
-                    print("Cannot refresh the OAuth2 token")
-                    exit()
-            print("Token not expired")
+                for i in range(max_retries):
+                    print("Token expired: trying to refresh")
+                    try:
+                        self.creds.refresh(Request())
+                        print("Token refreshed")
+                        # Store the refreshed token into the database
+                        token_data = json.loads(self.creds.to_json())
+                        self.db_conn.update_oauth_token(self.oauth_service, token_data)
+                        break
+                    except RefreshError as e:
+                        # Manual intervention needed
+                        print("Cannot refresh the OAuth2 token")
+                        raise e
+                    except (socket.gaierror, httplib2.error.HttpLib2Error) as e:
+                        if i == max_retries - 1:
+                            print("Max retries exceeded")
+                            raise e
+
+                        print(f"Network error: {e}")
+                        time.sleep(base_delay * (2**i))
+                        print("Waiting done")
+            else:
+                print("Token not expired")
+
             return func(self, *args, **kwargs)
 
         return wrapper
